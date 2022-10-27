@@ -1,0 +1,75 @@
+## defaults for _all_ profiles
+[profile.default]
+src = 'contracts'
+test = 'test'
+libs = ["lib"]
+out = 'out'
+remappings = [
+  '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
+  '@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
+  '@prb/math/contracts=lib/prb-math/contracts/',
+]
+#libraries = []
+#cache = true
+#force = false
+#evm_version = 'london'
+gas_reports = [
+  'OracleManagerFixedEpoch',
+  'MarketTieredLeverage',
+  'MarketTieredLeverageInternalStateSetters',
+  'GEMS',
+  'PoolTokenMarketUpgradeable',
+]
+### Sets the concrete solc version to use, this overrides the `auto_detect_solc` value
+solc_version = '0.8.17' # Trying latest version for deployment, actual deployment version may change.
+#auto_detect_solc = true
+#offline = false
+optimizer = true
+optimizer_runs = 200 # most of the functions in our dapp will be called more than 1000 times!
+#verbosity = 0
+#ignored_error_codes = []
+#ffi = false
+#sender = '0x00a329c0648769a73afac7f9381e08fb43dbea72'
+#tx_origin = '0x00a329c0648769a73afac7f9381e08fb43dbea72'
+#initial_balance = '0xffffffffffffffffffffffff'
+block_number = 100000
+#gas_limit = 7920027 # for mumbai/polygon
+#gas_price = 0
+#block_base_fee_per_gas = 0
+#block_coinbase = '0x0000000000000000000000000000000000000000'
+block_timestamp = 1600000000
+#block_difficulty = 0
+# via_ir = false
+
+
+[profile.verify]
+src = 'flattenedContracts'
+solc_version = '0.8.16'
+optimizer = true
+optimizer_runs = 200
+
+[fuzz]
+runs = 20
+
+[profile.ci.fuzz]
+runs = 1000              # more fuzzing on CI
+max_test_rejects = 10000
+
+# ## NOTE: the below configuration isn't woring properly yet. Needs some work.
+# #        https://docs.soliditylang.org/en/latest/smtchecker.html
+# [ci.model_checker]
+# contracts = { 'contracts/market/template/MarketTieredLeverage.sol' = [
+#   'MarketTieredLeverage',
+# ] }
+# engine = 'chc' # or 'all'/'bmc'
+# timeout = 10000
+# targets = [
+#   'assert',
+#   'divByZero',
+#   'underflow',
+#   'overflow',
+#   'divByZero',
+#   'constantCondition',
+#   'popEmptyArray',
+#   'outOfBounds',
+# ] # not included: 'balance'

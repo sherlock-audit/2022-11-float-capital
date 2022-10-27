@@ -16,6 +16,10 @@ secretsManager.js
 .bsb.lock
 lib/bs
 
+coverage/*
+out/*
+broadcast/*
+
 coverage.json
 
 coverage-all

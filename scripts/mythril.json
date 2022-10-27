@@ -1,0 +1,12 @@
+{
+  "remappings": [
+    "ds-test/=./lib/ds-test/src/",
+    "forge-std/=./lib/forge-std/src/",
+    "@chainlink=./node_modules/@chainlink",
+    "@openzeppelin=./node_modules/@openzeppelin",
+    "hardhat=./node_modules/hardhat"
+  ],
+  "optimizer": {
+    "enabled": true
+  }
+}

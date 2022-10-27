@@ -1,0 +1,6 @@
+{
+  "comment1": "unfortunately it seems filter_paths is the only way to get slither to only run on specific contracts currently. There are lots of open issues related to better filtering but unfortunately none seems to work.",
+  "filter_paths": "(contracts\/interfaces\/*|contracts\/components\/*|contracts\/mocks\/*|node_modules\/|lib\/|v0.1\/|mock\/|contracts\/testing\/*|contracts\/.*.*\\.t\\.sol|contracts\/.*.*\\.s\\.sol|contracts\/.*.*\\.u\\.sol|contracts\/.*.*\\.scenario\\.sol)",
+  "compile_force_framework": "foundry",
+  "detectors_to_exclude": "naming-convention"
+}
