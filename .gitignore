@@ -1,0 +1,68 @@
+node_modules
+
+# Buidler files
+cache
+artifacts
+build
+
+# Test codegen
+codegen-temp
+
+# Secrets
+secretsManager.js
+
+# rescript
+.merlin
+.bsb.lock
+lib/bs
+
+coverage.json
+
+coverage-all
+coverage-unit
+coverage-integration
+
+abis
+ast
+
+# No need to keep javascript files in contract tests
+test/**/*.js
+
+test/library/contracts/*
+!test/library/contracts/.gitkeep
+test/library/smock/*
+!test/library/smock/.gitkeep
+
+contracts/testing/generated/*
+!contracts/testing/generated/*.t.sol
+
+contract-docs
+
+deployments/*
+!deployments/mumbai
+!deployments/polygon
+!deployments/avalanche
+!deployments/fantom-testnet
+!deployments/mumbaiDev
+
+deploymentSummary.json
+
+broadcast/**/*.json
+!broadcast/save/**/*.json
+.env
+
+# Ignore sarif (Static Analysis Results Interchange Format) files
+*.sarif
+
+# Keep these in gitignore for now:
+typechain-types
+
+scribble-config.yaml
+
+# a place to keep flattened contracts that you don't want in git
+flattenedContracts
+
+coverage.html
+lcov.info
+
+docs
