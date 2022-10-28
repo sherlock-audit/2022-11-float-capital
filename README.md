@@ -26,11 +26,11 @@ _"Float like a butterfly, reentrancy like a bee"_ - Unknown
 
 The following files are in scope 🚨🚨
 ```
-./contracts/oracles/OracleManagerFixedEpoch.sol
+./contracts/oracles/OracleManager.sol
 ./contracts/YieldManagers/MarketLiquidityManagerSimple.sol
 ./contracts/market/template/MarketExtended.sol
-./contracts/market/template/MarketTieredLeverage.sol
-./contracts/PoolToken/PoolTokenMarketUpgradeable.sol
+./contracts/market/template/MarketCore.sol
+./contracts/PoolToken/PoolToken.sol
 ```
 
 ## Hello Watsons 👋

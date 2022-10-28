@@ -14,11 +14,11 @@ remappings = [
 #force = false
 #evm_version = 'london'
 gas_reports = [
-  'OracleManagerFixedEpoch',
-  'MarketTieredLeverage',
+  'OracleManager',
+  'MarketCore',
   'MarketTieredLeverageInternalStateSetters',
   'GEMS',
-  'PoolTokenMarketUpgradeable',
+  'PoolToken',
 ]
 ### Sets the concrete solc version to use, this overrides the `auto_detect_solc` value
 solc_version = '0.8.17' # Trying latest version for deployment, actual deployment version may change.
