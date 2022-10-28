@@ -1,23 +1,30 @@
-# Float Capital contest details
 
-- 10,700 USDC main award pot
+![float capital](/assets/float-saver.gif)
+
+_"Float like a butterfly, reentrancy like a bee"_ - Unknown
+
+
+# Float contest details 🌊
+
+- 10,700 USDC main award pot 💰💰💰
 - Join [Sherlock Discord](https://discord.gg/MABEWyASkp)
 - Submit findings using the issue page in your private contest repo (label issues as med or high)
 - [Read for more details](https://docs.sherlock.xyz/audits/watsons)
-- Starts November 2, 2022 15:00 UTC
-- Ends November 5, 2022 15:00 UTC
+- Starts November 2, 2022 15:00 UTC 🚨
+- Ends November 5, 2022 15:00 UTC 🚨
 
 # Resources
 
-- [Website](https://float.capital/)
-- [Docs](https://docs.float.capital/docs/)
+- [Website](https://float.capital/) (Play around with the alpha deployed last year.)
+- [Docs](https://docs.float.capital/docs/) (These docs are for the alpha version, different to this code.)
 - [Blog](https://docs.float.capital/blog/)
 - [GitHub](https://github.com/Float-Capital)
-- [Twitter](https://twitter.com/float_shipping)
+- [Twitter](https://twitter.com/float_shipping) (Give us a follow, we know you want to)
+
 
 # Audit scope
 
-The following files are in scope:
+The following files are in scope 🚨🚨
 ```
 ./contracts/oracles/OracleManagerFixedEpoch.sol
 ./contracts/YieldManagers/MarketLiquidityManagerSimple.sol
@@ -26,9 +33,22 @@ The following files are in scope:
 ./contracts/PoolToken/PoolTokenMarketUpgradeable.sol
 ```
 
-# About Float Capital
+## Hello Watsons 👋
 
-TBD
+Yes! You're here! Awesome. We are super excited for your journey on unpacking and dissecting our code. We will do our best to be available around the clock for all your questions, small, big, silly or severe (catch us on the Sherlock discord).
+
+For a verbose walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
+
+We wish you luck on your audit.
+
+Happy hunting 🕵
+
+_Float team_
+
+
+## About Float
+
+Float Arctic is tokenized long/short pools. More info coming soon.
 
 ## General
 
