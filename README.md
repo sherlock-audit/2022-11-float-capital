@@ -37,7 +37,7 @@ The following files are in scope 🚨🚨
 
 Yes! You're here! Awesome. We are super excited for your journey on unpacking and dissecting our code. We will do our best to be available around the clock for all your questions, small, big, silly or severe (catch us on the Sherlock discord).
 
-For a video walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
+For a walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
 
 We wish you luck on your audit.
 
@@ -115,6 +115,18 @@ The diagram below shows that mints/redeems occuring in epoch 1, will be processe
 
 This contract contains all the core logic related to the market. Minting and redeeming, the value transfer between pools, calculating funding etc. This is the most important contract. 
 
+Since a single contract was too large for deployment, we split the market contract into 2 parts. MarketCore is the core logic of the system - but MarketCore doubles as a proxy (via an EIP-1967 proxy) and all the functions for initialization or other seldom used admin functionality like adding new pools resides in that contract. This gives us the flexibility of still using a UUPS upgrade pattern without increasing gas costs of the common/core contract functions. 
+
+```
+./contracts/market/template/MarketExtended.sol
+
+```
+This contract contains non-core market functions that are rarely used (intially setting up the pools, parameter configuartion etc) and thus have lower gas costs.
+
+| ![contract structure](/assets/market-contract-structure.png) | 
+|:--:| 
+| *Structure of the Market Contracts* |
+
 ```
 ./contracts/oracles/OracleManager.sol
 ```
@@ -127,12 +139,6 @@ This contract validates that the oracle id's passed in for execution/upkeep are 
 ```
 This is a very simple contract this just holds all the collateral. Previously in the alpha this contract deposited liquidity into a yield protocol (aave) but we have removed this functionality now. 
 
-
-```
-./contracts/market/template/MarketExtended.sol
-
-```
-This contract contains non-core market functions that are rarely used  (intially setting up the pools, parameter configuartion etc). 
 
 ```
 ./contracts/PoolToken/PoolToken.sol
@@ -148,6 +154,8 @@ Modified ERC20 token contract. Think tokenized vault.
 
 - Black swan price movements bankrupting pools
 
+- We don’t use `safeTransfer` or check return values of the ‘PoolToken’ transfers since we control that token.
+
 - What if not enough liquidity exists in float tranche? 
 
 
@@ -160,6 +168,24 @@ Modified ERC20 token contract. Think tokenized vault.
 
 ### Other notes and thoughts 💭
 
+- Admin: We have direct access to setting the fundingRateMultiplier_e18 variable without timelock etc. The solution to that is to make the admin rather be the another contract that manages access and applies restrictions such as timelocks and keep that complexity out of the core logic contracts.
+
+### Structure/standands
+
+- Contract test code is written with the `.t.sol` suffix, and in general is integrated inside the file structure.
+- Deployment and manegement scripts use `.s.sol`
+- Interface contracts are prefixed with `I`
+
+### Invariants:
+
+- `poolValue` can only change in a system update (single external function).
+- `marketDeprecated` ⇒ `mintingPaused`
+- UserAction:
+  - `userAction.amount` == 0 ⇔ `userAction.correspondingEpoch` == 0
+  - `userAction.amount > 0` <IFF> `userAction.correspondingEpoch <= currentEpoch`
+  - `userAction.nextEpochAmount > 0` <IFF> `userAction.amount > 0`
+- Due to decimal rounding issues, it is possible for the total value deposited in the system to be larger than the sum of the value of all the pools. We believe that the rate of rounding error is tolerable for the system.
+![poolSum](/assets/sum-of-value.png)
 ---------------------------------------
 ## Get started
 
