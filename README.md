@@ -1,7 +1,7 @@
 
 ![float capital](/assets/float-saver.gif)
 
-_"Float like a butterfly, reentrancy like a bee"_ - Unknown
+_"Float like a butterfly, uint256 like a bee"_ - Unknown
 
 
 # Float contest details 🌊
@@ -37,7 +37,7 @@ The following files are in scope 🚨🚨
 
 Yes! You're here! Awesome. We are super excited for your journey on unpacking and dissecting our code. We will do our best to be available around the clock for all your questions, small, big, silly or severe (catch us on the Sherlock discord).
 
-For a verbose walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
+For a video walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
 
 We wish you luck on your audit.
 
@@ -46,14 +46,133 @@ Happy hunting 🕵
 _Float team_
 
 
-## About Float
+---------------------------------------
 
-Float Arctic is tokenized long/short pools. More info coming soon.
+## Float deepdive
 
-## General
+### About float
 
-Steps to compile code.
+Float Arctic is infrastructure to create tokenized pools (long/short/float) where pool token value tracks a data feed (price feed, exotic etc). Tokenized pools have collateral (ERC20 token) backing them. Pool token value increases/decreases as collateral moves between pools (zero-sum game). 
 
+Collateral moves between pools because of:
+1 - New point in data feed (e.g. ETH price up)
+2 - Funding
+3 - Fees 
+
+Collateral enters/exits pools because of:
+1 - Users minting new pool tokens (adding collateral)
+2 - Users burning pool tokens (removing collateral)
+
+
+
+Multiple long and short pools can exist in a market. Each pool can have a different leverage. 
+
+
+
+### Tranching
+
+Tranches are portions of financial products structured to divide risk or group characteristics in ways that are marketable to different users. In traditional finance for example, a product like debt would be separated into junior and senior tranches with different risk/return characteristics. 
+
+![float capital](/assets/system1.png)
+
+In float, the FLOAT tranche is essentailly:
+1 - The counterparty (will be long or short or neutral, wherever needed)
+2 - Wil have its delta (long/short exposure) frequently shift to ensure on aggregate long = short. 
+3 - Recieve funding + stablility fees from all other long/short pools (i.e. the fixed exposure tranches)
+
+
+![float capital](/assets/system2.png)
+
+
+In the intuative diagram below you should be able to follow how value transfers between pools and how the leverage of the FLOAT pool adjusts to ensure on aggregate the liquidity is equal in long and short. You can view this scenario in more detail [here](https://app.excalidraw.com/l/2big5WYTyfh/AsMLUl3D5WY).
+![float capital](/assets/system3.png)
+
+
+
+
+### Understanding epochs
+
+The process of value transfer / entrants and exits all get processed in a predictable way using a system of "epochs".
+Every epoch, we need to perform upkeep. Upkeep is essentially:
+- Processing value transfer between pools based on movement of data feed and funding + fees.
+- Processing new entries and exits to all pools.
+
+The diagram below shows that mints/redeems occuring in epoch 1, will be processed and executed when a price is received after a given wait period. This ensures defense against front running while allowing a batch effcient method to execute multiple actions at a single point.
+
+![epochs](/assets/epoch.png)
+
+
+
+
+
+
+
+### The contracts
+
+```
+./contracts/market/template/MarketCore.sol
+```
+
+This contract contains all the core logic related to the market. Minting and redeeming, the value transfer between pools, calculating funding etc. This is the most important contract. 
+
+```
+./contracts/oracles/OracleManager.sol
+```
+This contract validates that the oracle id's passed in for execution/upkeep are valid then eturns the prices to use to execute the value change. Any possibilty to maniuplate this contract or bypass its check could result in an errenous value transfer. 
+
+
+```
+./contracts/YieldManagers/MarketLiquidityManagerSimple.sol
+
+```
+This is a very simple contract this just holds all the collateral. Previously in the alpha this contract deposited liquidity into a yield protocol (aave) but we have removed this functionality now. 
+
+
+```
+./contracts/market/template/MarketExtended.sol
+
+```
+This contract contains non-core market functions that are rarely used  (intially setting up the pools, parameter configuartion etc). 
+
+```
+./contracts/PoolToken/PoolToken.sol
+```
+Modified ERC20 token contract. Think tokenized vault. 
+
+---------------------------------------
+## Considerations
+
+- The public function for upkeep takes in oracle IDs to use for updating the system? 
+
+- Oracle failure (no price updates recieved)
+
+- Black swan price movements bankrupting pools
+
+- What if not enough liquidity exists in float tranche? 
+
+
+- You have loops in your solidity code?
+
+### Known trade-offs in the current design 
+
+### Areas to pay attention to
+
+
+### Other notes and thoughts 💭
+
+---------------------------------------
+## Get started
+
+Steps to compile code (skip to step 3 if you've used foundry before):
+
+1) Install cargo + rust `curl https://sh.rustup.rs -sSf | sh`.
+2) Install foundry (+ forge & cast) `curl -L https://foundry.paradigm.xyz | bash` then re-source environment and run `foundryup`.
+
+3) Install `forge install`
+4) Compile contracts `forge build`.
+5) Test contracts `forge test`.
+
+TL;DR:
 ```bash
 forge install
 forge build
@@ -62,7 +181,7 @@ forge test
 
 In addition to forge this repo uses hardhat and the javascript ecosystem for some tooling. Please use [pnpm](https://pnpm.io) rather than npm or yarn for a stable experience.
 
-## Commands
+### Other Commands
 
 build the solidity code with hardhat:
 
@@ -102,7 +221,7 @@ pnpm dodoc-gen
 
 Note - more features and plugins of hardhat can be turned on/off inside the `hardhat.js` file.
 
-## Code Coverage
+### Code Coverage
 
 ```bash
 forge coverage --report lcov && genhtml lcov.info -o coverage
@@ -110,72 +229,78 @@ forge coverage --report lcov && genhtml lcov.info -o coverage
 
 To run that command you'll need [lcov](https://github.com/linux-test-project/lcov) installed. That can be installed via `sudo apt install lcov` or `brew install lcov` etc.
 
-## forge tests (Foundry)
 
-Install cargo + rust `curl https://sh.rustup.rs -sSf | sh`.
 
-Install foundry (+ forge & cast) `curl -L https://foundry.paradigm.xyz | bash` then re-source environment and run `foundryup`.
 
-Compile contracts `forge build`.
-
-Test contracts `forge test`.
-
-## deploying (foundry)
-
-Install foundry and pnpm
-
-Deploy dry run simulated without broadcasting `pnpm deploy-mumbai` or `pnpm deploy-fuji` etc.
-
-To broadast to network add `--broadcast` eg. `pnpm deploy-mumbai --broadcast`
-
-Add any desired forge flags such as `--slow`
-
-## Tools
-
-### Mythril
-
-**Install**
-
-`pip3 install mythril`
-
-(may require `pip3 install maturin` and the latest beta/nightly version of rust to work `rustup toolchain install nightly` and `rustup default nightly`).
-
-**Then run:**
-
-```bash
-myth analyze ./contracts/market/MarketTieredLeverage.sol --solc-json ./scripts/mythril.json
-```
-
-(or for docker install `docker run -v$(pwd):/tmp -w="/tmp" mythril/myth analyze ./contracts/market/MarketTieredLeverage.sol --solc-json ./scripts/mythril.json`)
-
-### Slither
-
-**Install**
-
-`pip3 install slither-analyzer`
-
-**Run:**
-
-`slither .`
-
-_NOTE:_ You can run slither faster if it uses the compilation output from forge directly. Do this by running `forge build --extra-output abi --extra-output userdoc --extra-output devdoc --extra-output evm.methodIdentifiers` and then running `slither . --ignore-compile`.
-
-**Using Docker**
-
-You can run the same commands as above but inside docker.
-
-`docker run -it -v $(pwd):/share trailofbits/eth-security-toolbox`
-
-Then inside run `solc-select 0.8.15` and run slither (and some of the other tools potentially) from within there. Note, `forge` isn't installed in that docker image, so you'll need to build outside and run slither with the `--ignore-compile` flag.
-
-**Viewing and reviewing results**
-
-One nice way to view the results from slither (much nicer than in the terminal) is to generate a `--sarif result.sarif` flag. You can then install a vscode (or equivalent) plugin to interpret that file to easily navigate the output and findings.
-
-Since slither won't over-write your results it is often useful to use `--sarif results_$(date +"%m-%d-%Y_%T").sarif` which will append the time and date to the results for easy reference.
-
-It is also can be useful to run a `--triage` and fix the issues one at a time.
-
-## Troubleshooting
+### Troubleshooting
 
 Often the forge compiler is over eager on its caching (which is good - makes things fast), but it can also cause issues! Before you spend hours debugging something mysterious in the contracts make sure to clear the cache. Do this via `forge cache clean` and/or deleting the cache `rm -rf ./cache` and/or running the contracts with the `--force`/`-f` flag to force them to re-compile completely.
+
+
+---------------------------------------
+## Glossary
+#### A
+
+actualValueChange - The actual amount (of payment token / collateral) that should change (increase or decrease). 
+
+#### E
+
+epochIndex - Refers to a specific epoch in the system. Epochs are increase monotonically with 0 being the first epoch index. 
+
+effectiveLiquidity - the liquidity in the market taking into account leverage. I.e. A 2x pool with $50 would have $100 of effective liquidity.
+valueChange - The liquidity that needs to flow between the long and short sides. 
+
+effectiveValueLong - Refers to the sum of all long liquidity (taking into account the leverage of each long pool and likely also taking into account float pool liquidity.)
+efffectiveValueShort - same as effectiveValueLong but for short. 
+
+#### F
+
+fundingRateMultiplier - A rate used to scale funding amount. 
+
+fundingAmount - the amount of funding that will be received by the generally the FLOAT pool while paid by proportionally (based on their effective liquidity) by the overbalanced pools.
+
+floatPoolLiquidity - the amount of collateral in the FLOAT poolType. 
+
+floatPoolLeverage - the leverage (positive or negative) of the float pool. Float pool leverage adjusts every epoch to balance the markets.
+
+#### G
+
+gems - Purely non-transferable ERC20 tokens collected by users on actions (allowing minting of NFTs etc). 
+
+#### L
+
+latestExecutedEpochIndex - represents the latest epoch where all orders have been executed. 
+
+LiquidityManager - Smart contract that holds all collateral. 
+
+#### M
+
+maxPercentChange - refers to the max percentage price change that can occur between any 2 epochs. Used as a safeguard to ensure that higher leveraged pools never go underwater and create bad debt. 
+
+MINIMUM_EXECUTION_WAIT_THRESHOLD - the time directly after an epoch has finished that needs to elapse before a chainlink price received is deemed to be valid to execute that previous epoch. This is important to prevent front-running as it takes into account time/ latency for prices to be aggregated and transmitted by chainlink. 
+
+
+#### O
+
+overbalancedValue - Generally refers to the side of the market (long/short) with more liquidity than the other side of the market (underbalanced value)
+
+#### P
+
+paymentToken - This generally refers to the ERC20 token that is used as collateral in the system, which is most cases is DAI. A user will need payment token to mint a position, and a user will receieve payment token when redeeming a position. 
+
+pool - A tokenized vault of collateral where ones share of the collateral is equal to their percentage ownership of the token supply. 
+
+poolType - Typically long or short or float, the type of pool generally dictates how the pool will behave when price movements occur. 
+
+poolTier - refers to one of the many possible pools in a poolType, each poolTier most likely has a certain leverage associated with it. The float poolType will only have a single tier. 
+
+priceMovement - refers to the percentage price movement of the reference asset between any two epochs. In base 1e18. 
+
+#### R
+
+registry - Core contract / factory that can keep track of all deployed smart contract markets and token. 
+
+#### U
+
+underbalancedValue - Generally refers to the side of the market (long/short) with less liquidity than the other side of the market (overbalanced value)
+
