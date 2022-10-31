@@ -170,11 +170,6 @@ The float tranche will never be exposed to more leverage (possitive or negative)
 
 The loops we have in the code are all fixed length which is based on the number of pool tiers in a market. We will keep these loops small and not launch more tiers than feasible.
 
-### Known trade-offs in the current design 
-
-### Areas to pay attention to
-
-
 ### Other notes and thoughts 💭
 
 - Admin: We have direct access to setting the fundingRateMultiplier_e18 variable without timelock etc. The solution to that is to make the admin rather be the another contract that manages access and applies restrictions such as timelocks and keep that complexity out of the core logic contracts.
