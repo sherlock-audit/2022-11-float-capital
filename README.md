@@ -150,21 +150,25 @@ Modified ERC20 token contract. Think tokenized vault.
 
 - The public function for upkeep takes in oracle IDs to use for updating the system? 
 
-- Oracle failure (no price updates recieved)
+This is designed this way to keep system updates cheaper on gas. All the computation for determining oracle IDs is on chain in the form of a keeper (gelato & chainlink keepers) - so in the case of emergancy those more costly functions can be called from the keeper.
+
+- Oracle failure (no price updates recieved in an epoch)
+
+This will activate a market deprecation counter. Users won't be able to enter/exit the market while this issue is being investigated for safety. Once cause of issue has been identified, resolutions can be made in the form of a smart contract upgrade to relevant parts of our system, manually deprecating the market - or waiting for the auto market deprecation to kick in 10 days after the incident. Once a market is deprecated users will be able to withdraw their funds at the last known price before the oracle failure.
 
 - Black swan price movements bankrupting pools
+
+In the case of having pools tiers with higher leverage it is possible for price movements to bankrupt that tier. For example - in a 10x leverage market - a price movement of 10% or more would against a side would bankrupt that side. To prevent this issue we'd have a maximum price movement of 9%. In the code this variable is called `maxPercentChange`.
 
 - We don’t use `safeTransfer` or check return values of the ‘PoolToken’ transfers since we control that token.
 
 - What if not enough liquidity exists in float tranche? 
 
+The float tranche will never be exposed to more leverage (possitive or negative) than its maximum which is currently hardcoded at -5x to 5x. After this point, the leverage of the fixed exposure pools will be sacraficed to keep the system working. The market side (long/short) that has an overbalanced effective liquidity will have a lower leverage than when there Float tranche has enough liquidity - but the underbalanced side will have perfect fixed exposure.
 
 - You have loops in your solidity code?
 
-### Known trade-offs in the current design 
-
-### Areas to pay attention to
-
+The loops we have in the code are all fixed length which is based on the number of pool tiers in a market. We will keep these loops small and not launch more tiers than feasible.
 
 ### Other notes and thoughts 💭
 
