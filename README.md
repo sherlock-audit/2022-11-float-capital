@@ -37,7 +37,7 @@ The following files are in scope 🚨🚨
 
 Yes! You're here! Awesome. We are super excited for your journey on unpacking and dissecting our code. We will do our best to be available around the clock for all your questions, small, big, silly or severe (catch us on the Sherlock discord).
 
-For a walkthrough of the system be sure to watch the [videos](link coming) that will take you through the system in finer details. 
+For a walkthrough of the system be sure to watch the [video](https://youtu.be/UjgqyKQSz7s) that will take you through the system in finer details. 
 
 We wish you luck on your audit.
 
