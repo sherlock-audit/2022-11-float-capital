@@ -33,6 +33,14 @@ The following files are in scope 🚨🚨
 ./contracts/PoolToken/PoolToken.sol
 ```
 
+# On-chain context
+
+```
+DEPLOYMENT: Polygon
+ERC20: DAI, USDC
+ERC721: none
+```
+
 ## Hello Watsons 👋
 
 Yes! You're here! Awesome. We are super excited for your journey on unpacking and dissecting our code. We will do our best to be available around the clock for all your questions, small, big, silly or severe (catch us on the Sherlock discord).
