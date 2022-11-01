@@ -94,11 +94,11 @@ contract MarketExtendedCore is AccessControlledAndUpgradeableModifiers, MarketSt
     emit ConfigChange(ConfigType.fundingRateMultiplier, abi.encode(fundingRateConfig));
   }
 
-  /// @notice Update the yearly funding rate multiplier for the market
+  /// @notice Update the yearly stability fee for the market
   /// @dev Can only be called by the current admin.
   /// @param stabilityFeeConfig New stability fee multiplier
   function changeStabilityFeeBasisPoints(StabilityFeeUpdate memory stabilityFeeConfig) external adminOnly {
-    require(stabilityFeeConfig.newStabilityFee <= 500, "funding rate must be <= 5%");
+    require(stabilityFeeConfig.newStabilityFee <= 500, "stability fee must be <= 5%");
 
     // This check helps make sure that config changes are deliberate.
     require(stabilityFeeConfig.prevStabilityFee == stabilityFee_basisPoints, "Incorrect prev value");
