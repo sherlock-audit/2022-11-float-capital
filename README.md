@@ -160,7 +160,7 @@ This will activate a market deprecation counter. Users won't be able to enter/ex
 
 In the case of having pools tiers with higher leverage it is possible for price movements to bankrupt that tier. For example - in a 10x leverage market - a price movement of 10% or more would against a side would bankrupt that side. To prevent this issue we'd have a maximum price movement of 9%. In the code this variable is called `maxPercentChange`.
 
-- We don’t use `safeTransfer` or check return values of the ‘PoolToken’ transfers since we control that token.
+- We don’t use `safeTransfer` or check return values of the ‘PoolToken’ transfers since we control that token. Additionally we will only use DAI or maybe USDC as a payment token. Any further payment token will be analysed deeply before use (payment tokens with transfer fees etc will be problematic to the system - we are aware of this).
 
 - What if not enough liquidity exists in float tranche? 
 
@@ -173,6 +173,8 @@ The loops we have in the code are all fixed length which is based on the number 
 ### Other notes and thoughts 💭
 
 - Admin: We have direct access to setting the fundingRateMultiplier_e18 variable without timelock etc. The solution to that is to make the admin rather be the another contract that manages access and applies restrictions such as timelocks and keep that complexity out of the core logic contracts.
+
+- All our contracts are upgradeable and make heavy use of immutable variables. We are aware that this is a risk and will ensure that we have lots of tests and an upgrade function that checks them to make sure that these values are set correctly on new upgrades. Additionally upgrades will be protected by the timelock mentioned above where the proposer+executor is a multisig contract.
 
 ### Structure/standands
 
