@@ -166,7 +166,7 @@ This section lists functions that are explicitly declared public or payable. Ple
 
 | Solidity Versions observed | 🧪 Experimental Features | 💰 Can Receive Funds | 🖥 Uses Assembly | 💣 Has Destroyable Contracts | 
 |============|===========|===========|===========|
-| `^0.8.15` |  | **** | **** | **** | 
+| `0.8.17` |  | **** | **** | **** | 
 
 | 📤 Transfers ETH | ⚡ Low-Level Calls | 👥 DelegateCall | 🧮 Uses Hash Functions | 🔖 ECRecover | 🌀 New/Create/Create2 |
 |============|===========|===========|===========|===========|
@@ -239,11 +239,11 @@ This section lists functions that are explicitly declared public or payable. Ple
 
 |  File Name  |  SHA-1 Hash  |
 |-------------|--------------|
-| ./contracts/oracles/OracleManager.sol | 3b665cd222b4d13b8c18c20383d934c0cdba9b26 |
-| ./contracts/YieldManagers/MarketLiquidityManagerSimple.sol | 9ed50ffce2293f80004f554aaffcafb4c2744b2d |
-| ./contracts/market/template/MarketExtended.sol | bd644dc55dbed886cd138f78f46365a8bf02fd4d |
-| ./contracts/market/template/MarketCore.sol | 1367879ac11b0c76dacc33f93630650779c4456a |
-| ./contracts/PoolToken/PoolToken.sol | cf413b6f19a45f5fcb5d36e6e0823c618aa81b5d |
+| ./contracts/oracles/OracleManager.sol | 0fb94ecf19bdec9ac1924757c0e8004718d98996 |
+| ./contracts/YieldManagers/MarketLiquidityManagerSimple.sol | 5ee4e1125b74e060b8c7d8ff575687ef76796a7c |
+| ./contracts/market/template/MarketExtended.sol | 1b6e961cbbe3a852d90edd53943029404592f758 |
+| ./contracts/market/template/MarketCore.sol | 1f1b787e228a959d3c4b8cb1c61eb04b3d0d55bc |
+| ./contracts/PoolToken/PoolToken.sol | 7478e33d66090b7d305df92d1ea37b12672202cc |
 
 
  Contracts Description Table
