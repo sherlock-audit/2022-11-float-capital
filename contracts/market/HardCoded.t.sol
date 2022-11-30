@@ -52,7 +52,7 @@ contract HardCodedTest is FloatTest {
     assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 100e18, "Short pool 2 seed value is incorrect");
     assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 100e18, "Float tranche seed value is incorrect");
     assertEq(defaultPaymentToken.balanceOf(address(liquidityManager)), 500e18, "YieldManagerMock seed value is incorrect");
-    assertEq(maxPercentageChange, 199900000000000000, "maxPercentageChange is incorrect");
+    assertEq(maxPercentageChange, 190000000000000000, "maxPercentageChange is incorrect");
   }
 
   function testHardCodedExamplePriceMovementUp() public {
@@ -83,13 +83,13 @@ contract HardCodedTest is FloatTest {
 
     // l1 - 119.99 (using maxPriceChange of 19.99% due to 5x cap on float pool)
     // l2 - 139.98
-    // s1 - 80.01
-    // s2 - 60.02
+    // s1 - 81
+    // s2 - 62
     // f - 100
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 119.99e18, "Long pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 139.98e18, "Long pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 80.01e18, "Short pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 60.02e18, "Short pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 119e18, "Long pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 138e18, "Long pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 81e18, "Short pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 62e18, "Short pool 2 value is incorrect");
     assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 100e18, "Float pool 1 value is incorrect");
   }
 
@@ -102,15 +102,15 @@ contract HardCodedTest is FloatTest {
 
     // totalAmountDueWithoutSafetyMaximum = effectiveLiquidityShort = 200
 
-    // l1 - 80.01 (using maxPriceChange of 19.99% due to 5x cap on float pool)
-    // l2 - 60.02
+    // l1 - 81 (using maxPriceChange of 19.99% due to 5x cap on float pool)
+    // l2 - 62
     // s1 - 119.99
     // s2 - 139.98
     // f - 100
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 80.01e18, "Long pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 60.02e18, "Long pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 119.99e18, "Short pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 139.98e18, "Short pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 81e18, "Long pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 62e18, "Long pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 119e18, "Short pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 138e18, "Short pool 2 value is incorrect");
     assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 100e18, "Float pool 1 value is incorrect");
 
     console2.log("The large price movement test is passing");
@@ -167,16 +167,16 @@ contract HardCodedTest is FloatTest {
     updateSystemStateSingleMarket(marketIndex);
 
     // l1 - 114.5381818182e18
-    // l2 - 645.3818181818e18
-    // s1 - 80.01 (using maxPriceChange of 19.99% due to 5x cap on float pool)
-    // s2 - 60.02
+    // l2 - 638.1818181818e18
+    // s1 - 81 (using maxPriceChange of 19.99% due to 5x cap on float pool)
+    // s2 - 62
     // f - 0.05e18
     // dividing by 1e8 to account decimal inprecision in manually calculated value
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexS1) / 1e8, 114.5381818181 ether / 1e8, "Long pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexS2) / 1e8, 645.3818181818 ether / 1e8, "Long pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexL1), 80.01e18, "Short pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexL2), 60.02e18, "Short pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 0.05e18, "Float pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexS1) / 1e8, 113.8181818181 ether / 1e8, "Long pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexS2) / 1e8, 638.1818181818 ether / 1e8, "Long pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexL1), 81e18, "Short pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexL2), 62e18, "Short pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 5e18, "Float pool 1 value is incorrect");
   }
 
   function testHardCodedExampleLargePriceMovementDownWithCappedFloatLeverage() public {
@@ -208,23 +208,28 @@ contract HardCodedTest is FloatTest {
 
     updateSystemStateSingleMarket(marketIndex);
 
-    // l1 - 80.01 (using maxPriceChange of 19.99% due to 5x cap on float pool)
-    // l2 - 60.02
+    // l1 - 81 (using maxPriceChange of 19.99% due to 5x cap on float pool)
+    // l2 - 62
     // s1 - 114.5381818182e18
-    // s2 - 645.3818181818e18
+    // s2 - 638.1818181818e18
     // f - 0.05e18
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 80.01e18, "Long pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 60.02e18, "Long pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 81e18, "Long pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 62e18, "Long pool 2 value is incorrect");
     // dividing by 1e8 to account decimal inprecision in manually calculated value
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1) / 1e8, 114.5381818181 ether / 1e8, "Short pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2) / 1e8, 645.3818181818 ether / 1e8, "Short pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 0.05e18, "Float pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1) / 1e8, 113.8181818181 ether / 1e8, "Short pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2) / 1e8, 638.1818181818 ether / 1e8, "Short pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 5e18, "Float pool 1 value is incorrect");
   }
 
   function testHardCodedFundingRateWithMultiplePoolsPerSide() public {
     vm.startPrank(ADMIN);
     market.changeMarketFundingRateMultiplier(
-      IMarketExtendedCore.FundingRateUpdate({prevMultiplier: market.get_fundingRateMultiplier(), newMultiplier: 0})
+      IMarketExtendedCore.FundingRateUpdate({
+        prevMultiplier: market.get_fundingRateMultiplier(),
+        newMultiplier: 0,
+        prevMinFloatPoolFundingBoost: market.get_minFloatPoolFundingBoost(),
+        newMinFloatPoolFundingBoost: 1e18
+      })
     );
 
     uint256[3][8] memory tokenTypeLiquidity;
@@ -249,11 +254,11 @@ contract HardCodedTest is FloatTest {
     updateSystemStateSingleMarket(marketIndex);
 
     //checking that the pool liquidity is updated correctly
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 200e18, "Long pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 400e18, "Long pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 100e18, "Short pool 1 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 300e18, "Short pool 2 value is incorrect");
-    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 100e18, "Float pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1), 200e18, "[a] Long pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2), 400e18, "[a] Long pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1), 100e18, "[a] Short pool 1 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2), 300e18, "[a] Short pool 2 value is incorrect");
+    assertEq(market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF), 100e18, "[a] Float pool 1 value is incorrect");
     assertApproxEqAbs(
       market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1) +
         market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2) +
@@ -266,42 +271,53 @@ contract HardCodedTest is FloatTest {
     );
 
     market.changeMarketFundingRateMultiplier(
-      IMarketExtendedCore.FundingRateUpdate({prevMultiplier: market.get_fundingRateMultiplier(), newMultiplier: 10000})
+      IMarketExtendedCore.FundingRateUpdate({
+        prevMultiplier: market.get_fundingRateMultiplier(),
+        newMultiplier: 10000,
+        prevMinFloatPoolFundingBoost: market.get_minFloatPoolFundingBoost(),
+        newMinFloatPoolFundingBoost: 1e18
+      })
     );
-
-    console2.log("totalSystemLiquidity", totalSystemLiquidity);
 
     warpToEndOfMewtInNextEpoch();
     mockChainlinkOraclePercentPriceMovement(marketFactory.chainlinkOracle(marketIndex), priceChangePercent);
 
     updateSystemStateSingleMarket(marketIndex);
 
-    int256[2] memory fundingAmounts = calculateFundingAmount(uint8(IMarketCommon.PoolType.LONG), 1000e18, 700e18, IMarket(address(market)));
+    int256 floatPoolLeverage = 3e18;
+
+    int256[2] memory fundingAmounts = calculateFundingAmount(
+      uint8(IMarketCommon.PoolType.LONG),
+      1000e18,
+      700e18,
+      IMarket(address(market)),
+      floatPoolLeverage
+    );
 
     assertEq(
       market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1),
-      200e18 - (uint256(fundingAmounts[1]) * 1e18) / 5e18,
-      "Long pool 1 value is incorrect"
+      200e18 - (200e18 * uint256(fundingAmounts[1]) * 1e18) / (1e18 * 1000e18),
+      "[b] Long pool 1 value is incorrect"
     );
     assertEq(
       market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL2),
-      400e18 - (uint256(fundingAmounts[1]) * 4e18) / 5e18,
-      "Long pool 2 value is incorrect"
+      400e18 - (400e18 * uint256(fundingAmounts[1]) * 2e18) / (1e18 * 1000e18),
+      "[b] Long pool 2 value is incorrect"
     );
     assertEq(
       market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS1),
-      100e18 - (uint256(-fundingAmounts[0]) * 1e18) / 7e18,
-      "Short pool 1 value is incorrect"
+      100e18 - (100e18 * uint256(-fundingAmounts[0]) * 1e18) / (1e18 * 700e18),
+      "[b] Short pool 1 value is incorrect"
     );
     assertEq(
       market.get_pool_value(IMarketCommon.PoolType.SHORT, poolIndexS2),
-      300e18 - (uint256(-fundingAmounts[0]) * 6e18) / 7e18,
-      "Short pool 2 value is incorrect"
+      300e18 - (300e18 * uint256(-fundingAmounts[0]) * 2e18) / (1e18 * 700e18),
+      "[b] Short pool 2 value is incorrect"
     );
     assertEq(
       market.get_pool_value(IMarketCommon.PoolType.FLOAT, poolIndexF),
       100e18 + uint256(-fundingAmounts[0]) + uint256(fundingAmounts[1]),
-      "Float pool 1 value is incorrect"
+      "[b] Float pool 1 value is incorrect"
     );
     assertApproxEqAbs(
       market.get_pool_value(IMarketCommon.PoolType.LONG, poolIndexL1) +
@@ -321,10 +337,10 @@ contract HardCodedTest is FloatTest {
       defaultOracleManager.getEpochStartTimestamp(),
       "Previous epoch end timetstamp needs to equal start of current epoch start timestamp at deployment."
     );
-    (uint80 latestRoundId, , , , ) = defaultOracleManager.chainlinkOracle().latestRoundData();
+    (uint80 latestRoundId, int256 answer, , , ) = defaultOracleManager.chainlinkOracle().getRoundData(1);
 
     assertEq(getPreviousExecutedEpochIndex(), 0, "Latest executed epoch needs be 0 at deployment.");
-    assertLe(getPreviousOraclePriceIdentifier(), latestRoundId, "Latest oracle index at deployment cannot be greater than latest round ID");
+    assertEq(getLastEpochPrice(), answer, "Latest price must be set correctly at deployment.");
   }
 
   function testAddingPoolsToExistingMarket(uint256 poolTypeInt) public {
@@ -353,7 +369,7 @@ contract HardCodedTest is FloatTest {
 
     MarketExtended(address(market)).addPoolToExistingMarket(newPool, initialEffectiveLiquidityForNewPool, ADMIN, marketIndex);
 
-    uint128[2] memory totalEffectiveLiquidityAfterAddingNewPool = market.get_effectiveLiquidityForPoolType();
+    uint256[2] memory totalEffectiveLiquidityAfterAddingNewPool = market.get_effectiveLiquidityForPoolType();
     uint256 floatPoolLiquidity = market.get_pool_value(IMarketCommon.PoolType.FLOAT, 0);
 
     assertEq(market.numberOfPoolsOfType(poolType), numberOfPoolsOfType + 1, "New pool should have been added");
