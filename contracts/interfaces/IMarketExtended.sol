@@ -41,8 +41,10 @@ interface IMarketExtendedCore is IMarketCommon {
   /// @notice Parameters when funding rate is updated
   /// @dev Can only be called by the current admin.
   struct FundingRateUpdate {
-    uint256 prevMultiplier;
-    uint256 newMultiplier;
+    uint128 prevMultiplier;
+    uint128 newMultiplier;
+    uint128 prevMinFloatPoolFundingBoost;
+    uint128 newMinFloatPoolFundingBoost;
   }
 
   /// @notice Parameters when funding rate is updated
@@ -55,7 +57,7 @@ interface IMarketExtendedCore is IMarketCommon {
   /// @notice Used in event
   enum ConfigType {
     marketOracleUpdate,
-    fundingRateMultiplier,
+    fundingVariables,
     stabilityFee
   }
 
@@ -127,7 +129,10 @@ interface IMarketExtendedView is IMarketCommon {
   function get_maxPercentChange() external view returns (int256);
 
   /// @notice Admin-adjustable value that determines the magnitude of funding amount each epoch
-  function get_fundingRateMultiplier() external view returns (uint256);
+  function get_fundingRateMultiplier() external view returns (uint128);
+
+  /// @notice Admin-adjustable value that determines the minimum magnitude of funding amount each epoch
+  function get_minFloatPoolFundingBoost() external view returns (uint128);
 
   /// @notice Admin-adjustable value that determines the mint fee
   function get_stabilityFee_basisPoints() external view returns (uint256);
@@ -154,7 +159,7 @@ interface IMarketExtendedView is IMarketCommon {
 
   /// @notice The effective liquidity (actual liquidity * leverage) for all the pools of a specific type
   /// @return The contract stored value for effective liquidity
-  function get_effectiveLiquidityForPoolType() external view returns (uint128[2] memory);
+  function get_effectiveLiquidityForPoolType() external view returns (uint256[2] memory);
 
   /// @notice View function for the gems state variable
   /// @return address of the gems contract

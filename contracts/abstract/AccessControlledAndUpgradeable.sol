@@ -18,6 +18,10 @@ abstract contract AccessControlledAndUpgradeable is Initializable, AccessControl
   bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
   /// @notice Role for the single entity that has admin control over the contract.
   bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+  /// @notice Role for the single entity that has important EMERGENCY mitigation actions.
+  bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
+  /// @notice Role for the single entity that has ability to change some minor parameters in code.
+  bytes32 public constant MINOR_ADMIN_ROLE = keccak256("MINOR_ADMIN_ROLE");
 
   /// @notice Initializes the contract when called by parent initializers.
   /// @param initialAdmin The initial admin who will hold all roles.
@@ -29,12 +33,15 @@ abstract contract AccessControlledAndUpgradeable is Initializable, AccessControl
 
   /// @notice Initializes the contract for contracts that already call both __AccessControl_init
   ///         and _UUPSUpgradeable_init when initializing.
-  /// @param initialAdmin The initial admin who will hold all roles.
-  function _AccessControlledAndUpgradeable_init_unchained(address initialAdmin) internal {
-    require(initialAdmin != address(0));
-    _setupRole(DEFAULT_ADMIN_ROLE, initialAdmin);
-    _setupRole(ADMIN_ROLE, initialAdmin);
-    _setupRole(UPGRADER_ROLE, initialAdmin);
+  /// @param initialEverythingRole The initial address who will hold ALL roles initially.
+  /// @dev all of these are using the DEFAULT_ROLE_ADMIN as the role admin - for timelocks to be meaningful - this role needs to have a stricter timelock than all these roles.
+  function _AccessControlledAndUpgradeable_init_unchained(address initialEverythingRole) internal {
+    require(initialEverythingRole != address(0));
+    _setupRole(DEFAULT_ADMIN_ROLE, initialEverythingRole);
+    _setupRole(ADMIN_ROLE, initialEverythingRole);
+    _setupRole(MINOR_ADMIN_ROLE, initialEverythingRole);
+    _setupRole(EMERGENCY_ROLE, initialEverythingRole);
+    _setupRole(UPGRADER_ROLE, initialEverythingRole);
   }
 
   /// @notice Authorizes an upgrade to a new address.
@@ -49,6 +56,16 @@ abstract contract AccessControlledAndUpgradeable is Initializable, AccessControl
 contract AccessControlledAndUpgradeableModifiers is AccessControlledAndUpgradeable {
   modifier adminOnly() virtual {
     _checkRole(ADMIN_ROLE, msg.sender);
+    _;
+  }
+
+  modifier emergencyMitigationOnly() virtual {
+    _checkRole(EMERGENCY_ROLE, msg.sender);
+    _;
+  }
+
+  modifier minorAdminOnly() virtual {
+    _checkRole(MINOR_ADMIN_ROLE, msg.sender);
     _;
   }
 }

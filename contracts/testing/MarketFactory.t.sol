@@ -215,10 +215,10 @@ contract MarketFactory is Test {
   function setFundingRate(
     address admin,
     uint32 marketIndex,
-    uint256 next
+    uint128 newFundingRate
   ) public {
     vm.startPrank(admin);
-    IMarketExtendedCore.FundingRateUpdate memory a = IMarketExtendedCore.FundingRateUpdate(0, next);
+    IMarketExtendedCore.FundingRateUpdate memory a = IMarketExtendedCore.FundingRateUpdate(0, newFundingRate, 0, 1e18);
     marketExtended(marketIndex).changeMarketFundingRateMultiplier(a);
     vm.stopPrank();
   }

@@ -65,9 +65,7 @@ contract FloatTest is FloatContractsCoordinator {
     int256 oracleFirstPrice,
     MarketFactory.MarketContractType marketType
   ) public returns (uint32 marketIndex) {
-    AggregatorV3Interface chainlinkOracleMock = AggregatorV3Interface(
-      address(new AggregatorV3Mock(oracleFirstPrice, DEFAULT_ORACLE_FIRST_ROUND_ID, DEFAULT_ORACLE_DECIMALS))
-    );
+    AggregatorV3Mock chainlinkOracleMock = new AggregatorV3Mock(oracleFirstPrice, DEFAULT_ORACLE_FIRST_ROUND_ID, DEFAULT_ORACLE_DECIMALS);
     marketIndex = marketFactory.deployMarketWithPrank(
       ADMIN,
       initialLiquidityToSeedEachPool,
@@ -187,9 +185,8 @@ contract FloatTest is FloatContractsCoordinator {
     return defaultMarket.get_epochInfo().latestExecutedEpochIndex;
   }
 
-  function getPreviousOraclePriceIdentifier() public view returns (uint80) {
-    uint80 previousOraclePriceIdentifier = marketFactory.market(defaultMarketIndex).get_epochInfo().latestExecutedOracleRoundId;
-    return previousOraclePriceIdentifier;
+  function getLastEpochPrice() public view returns (int256) {
+    return int256(uint256(marketFactory.market(defaultMarketIndex).get_epochInfo().lastEpochPrice));
   }
 
   function timeLeftInEpoch() public view returns (uint256 _timeLeftInEpoch) {
@@ -304,24 +301,30 @@ contract FloatTest is FloatContractsCoordinator {
   int256 maxPercentChange;
   uint256 secondsInEpoch;
   uint256 fundingRateMultiplier;
+  uint256 minFloatPoolFundingBoost;
   int256 priceMovement;
   int256 perfectFloatPoolLeverage;
+  uint256 totalUserEffectiveValue;
 
   function calculateFundingAmount(
     uint8 overbalancedIndex,
     uint256 overbalancedValue,
     uint256 underbalancedValue,
-    IMarket market
+    IMarket market,
+    int256 floatLeverage
   ) public virtual returns (int256[2] memory fundingAmount) {
+    totalUserEffectiveValue = overbalancedValue + underbalancedValue;
     secondsInEpoch = market.get_oracleManager().EPOCH_LENGTH();
     fundingRateMultiplier = market.get_fundingRateMultiplier();
+    minFloatPoolFundingBoost = market.get_minFloatPoolFundingBoost();
+    if (floatLeverage < 0) floatLeverage = -floatLeverage;
 
-    uint256 totalFunding = (2 * overbalancedValue * fundingRateMultiplier * secondsInEpoch) / (secondsInAYear * 10000);
+    uint256 totalFunding = (totalUserEffectiveValue *
+      fundingRateMultiplier *
+      Math.max(minFloatPoolFundingBoost, uint256(floatLeverage)) *
+      secondsInEpoch) / (secondsInAYear * 1e22);
 
-    uint256 overbalancedFunding = Math.min(
-      totalFunding,
-      (totalFunding * (2 * overbalancedValue - underbalancedValue)) / (overbalancedValue + underbalancedValue)
-    );
+    uint256 overbalancedFunding = Math.min(totalFunding, (totalFunding * (2 * overbalancedValue - underbalancedValue)) / (totalUserEffectiveValue));
     uint256 underbalancedFunding = totalFunding - overbalancedFunding;
 
     if (overbalancedIndex == uint8(IMarketCommon.PoolType.SHORT)) fundingAmount = [-int256(overbalancedFunding), int256(underbalancedFunding)];
@@ -334,6 +337,7 @@ contract FloatTest is FloatContractsCoordinator {
     uint256 underbalancedValue,
     IMarket market
   ) public view virtual returns (int256[2] memory fundingAmount) {
+    // TODO: add reference implementation
     /*
     baseFunding exists based on the size of capital and happens regardless of balance.
     additionalFunding scales as the imbalance of liquidity does. 
@@ -411,7 +415,7 @@ contract FloatTest is FloatContractsCoordinator {
   function valueChangeForPool(
     IMarketCommon.PoolType poolType,
     uint8 poolIndex,
-    uint128[2] memory previousTotalEffectiveLiquidity,
+    uint256[2] memory previousTotalEffectiveLiquidity,
     uint256 floatPoolLiquidity,
     int256 previousOraclePrice,
     uint256 previousPoolPaymentTokenBalance
@@ -427,7 +431,7 @@ contract FloatTest is FloatContractsCoordinator {
         previousTotalEffectiveLiquidity[uint256(IMarketCommon.PoolType.SHORT)],
         floatPoolLiquidity,
         previousOraclePrice,
-        AggregatorV3InterfaceS(address(defaultOracleManager.chainlinkOracle())).getRoundData((getPreviousOraclePriceIdentifier())).answer,
+        getLastEpochPrice(),
         defaultMarket
       );
     uint256 effectiveLiquidityOnSide;

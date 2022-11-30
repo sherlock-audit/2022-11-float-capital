@@ -35,30 +35,27 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
   /// @notice This calculates the value transfer from the overbalanced to underbalanced side (i.e. the funding rate)
   /// This is a further incentive measure to balanced markets. This may be present on some and not other pool token markets.
   /// @param overbalancedIndex poolType with more liquidity.
-  /// @param overbalancedValue Side with more liquidity.
-  /// @param underbalancedValue Side with less liquidity.
+  /// @param overbalancedEffectiveValue Side with more liquidity.
+  /// @param underbalancedEffectiveValue Side with less liquidity.
   /// @return fundingAmount The amount the overbalanced side needs to pay the underbalanced.
   function _calculateFundingAmount(
     uint256 overbalancedIndex,
-    uint256 overbalancedValue,
-    uint256 underbalancedValue
+    uint256 overbalancedEffectiveValue,
+    int256 floatLeverage,
+    uint256 underbalancedEffectiveValue
   ) internal view returns (int256[2] memory fundingAmount) {
-    /*
-    totalFunding is calculated on the notional of between long and short liquidity and 2x long and short liquidity. 
-    The notional on which funding is calculated increaseas as the imbalance increases.
-    The split of funding paid between underbalanced and overbalanced is 50/50 when long = short liq and moves
-    linearly to 100% paid by the overbalanced beyong the point where liquidity is 2:1 ratio
-    (liquidity in overbalanced side is more than double liquidity in underbalanced side)
-    This modular function is logical but naive implementation that will likely change somewhat upon more indepth 
-    modelling results that are still pending. 
-    */
+    uint256 totalUserEffectiveValue = overbalancedEffectiveValue + underbalancedEffectiveValue;
 
-    // fundingRateMultiplier is in basis points so need to divide by 10,000.
-    uint256 totalFunding = (2 * overbalancedValue * fundingRateMultiplier * oracleManager.EPOCH_LENGTH()) / (365.25 days * 10000);
+    FundingVariables memory fundingVariablesMem = fundingVariables;
+    // NOTE: fundingRateMultiplier is in basis points so need to divide by 10,000, and floatLeverage is in base 1e18 so overall we divide by 1e22.
+    uint256 totalFunding = (totalUserEffectiveValue *
+      fundingVariablesMem.fundingRateMultiplier *
+      Math.max(fundingVariablesMem.minFloatPoolFundingBoost, floatLeverage.abs()) *
+      oracleManager.EPOCH_LENGTH()) / (365.25 days * 1e22);
 
     uint256 overbalancedFunding = Math.min(
       totalFunding,
-      (totalFunding * ((2 * overbalancedValue) - underbalancedValue)) / (overbalancedValue + underbalancedValue)
+      (totalFunding * ((2 * overbalancedEffectiveValue) - underbalancedEffectiveValue)) / (totalUserEffectiveValue)
     );
     uint256 underbalancedFunding = totalFunding - overbalancedFunding;
 
@@ -99,11 +96,11 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
     // If this is the case, the side with greater liquidity will have a reduced exposure or delta of their position. I.e. If $1m long and $500k short,
     // Longs will only get 50% ($500k) long exposure.
     if (effectiveValueShort > effectiveValueLong) {
-      params.fundingAmount = _calculateFundingAmount(SHORT_TYPE, effectiveValueShort, effectiveValueLong);
+      params.fundingAmount = _calculateFundingAmount(SHORT_TYPE, effectiveValueShort, floatPoolLeverage, effectiveValueLong);
       params.valueChange = priceMovement_e18.mul(int256(effectiveValueLong + uint256(floatPoolLeverage).mul(floatPoolLiquidity)));
       params.underBalancedSide = LONG_TYPE;
     } else {
-      params.fundingAmount = _calculateFundingAmount(LONG_TYPE, effectiveValueLong, effectiveValueShort);
+      params.fundingAmount = _calculateFundingAmount(LONG_TYPE, effectiveValueLong, floatPoolLeverage, effectiveValueShort);
       params.valueChange = priceMovement_e18.mul(int256(effectiveValueShort + uint256(-floatPoolLeverage).mul(floatPoolLiquidity)));
       params.underBalancedSide = SHORT_TYPE;
     }
@@ -117,15 +114,15 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
   /// @return poolStates Compact struct of pool states after rebalance
   function _rebalancePoolsAndExecuteBatchedActions(
     uint32 epochIndex,
-    uint128[2] memory totalEffectiveLiquidityPoolType,
+    uint256[2] memory totalEffectiveLiquidityPoolType,
     int256 floatPoolLeverage,
     ValueChangeAndFunding memory params
-  ) internal returns (uint128[2] memory nextTotalEffectiveLiquidityPoolType, PoolState[] memory poolStates) {
+  ) internal returns (uint256[2] memory nextTotalEffectiveLiquidityPoolType, PoolState[] memory poolStates) {
     poolStates = new PoolState[](_totalNumberOfPoolTiers);
     uint8 currentPoolStateIndex;
 
     // Correctly account for liquidity in long and short by adding the float liquidity to the underbalanced side.
-    totalEffectiveLiquidityPoolType[params.underBalancedSide] += uint128(uint256(pools[PoolType.FLOAT][0].value).mul(floatPoolLeverage.abs()));
+    totalEffectiveLiquidityPoolType[params.underBalancedSide] += pools[PoolType.FLOAT][0].value.mul(floatPoolLeverage.abs());
 
     // For every pool (long pools, short pools and float pool)
     // 1) Adjust poolValue based on price movements and funding (and fees for float pool)
@@ -138,20 +135,19 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
         if (poolType != FLOAT_TYPE) {
           // To correctly apportion funding owed for the underblananced tiers, we need to remove the float liquidity contribution
           int256 actualTotalEffectiveLiquidityForPoolType = int256(
-            (uint256(totalEffectiveLiquidityPoolType[poolType]) -
-              (poolType == params.underBalancedSide ? uint256(pools[PoolType.FLOAT][0].value).mul(floatPoolLeverage.abs()) : 0))
+            (totalEffectiveLiquidityPoolType[poolType] -
+              (poolType == params.underBalancedSide ? pools[PoolType.FLOAT][0].value.mul(floatPoolLeverage.abs()) : 0))
           );
 
           // Long and short pools both pay funding
           poolValue +=
-            (((poolValue * poolFixedConfig.leverage * params.valueChange) / int128(totalEffectiveLiquidityPoolType[poolType])) -
+            (((poolValue * poolFixedConfig.leverage * params.valueChange) / int256(totalEffectiveLiquidityPoolType[poolType])) -
               ((poolValue * poolFixedConfig.leverage * params.fundingAmount[poolType]) / (actualTotalEffectiveLiquidityForPoolType))) /
             1e18;
         } else {
           // Float pool recieves all funding and fees.
           poolValue +=
-            ((poolValue * floatPoolLeverage * params.valueChange) /
-              (int256(uint256(totalEffectiveLiquidityPoolType[params.underBalancedSide])) * 1e18)) +
+            ((poolValue * floatPoolLeverage * params.valueChange) / (int256(totalEffectiveLiquidityPoolType[params.underBalancedSide]) * 1e18)) +
             -params.fundingAmount[SHORT_TYPE] + // funding value is negative for short side (double negative to add it)
             params.fundingAmount[LONG_TYPE] +
             int256(feesToDistribute[epochIndex & 1]);
@@ -162,12 +158,14 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
         uint256 tokenSupply = IPoolToken(poolFixedConfig.token).totalSupply();
         uint256 price = uint256(poolValue).div(tokenSupply);
 
+        // as a precautionary measure - we pause minting immediately in this case.
+        if (price < 1e9) mintingPaused = true;
+
         // All entries and exits to the pool are processed at latest price based on newly calculated poolValue
         poolValue += _processAllBatchedEpochActions(epochIndex, PoolType(poolType), poolTier, price, poolFixedConfig.token);
 
         // We calculate the new total liquidity always excluding the floating tranche.
-        if (poolType != FLOAT_TYPE)
-          nextTotalEffectiveLiquidityPoolType[poolType] += uint128(uint256(poolValue).mul(int256(poolFixedConfig.leverage).abs()));
+        if (poolType != FLOAT_TYPE) nextTotalEffectiveLiquidityPoolType[poolType] += uint256(poolValue).mul(int256(poolFixedConfig.leverage).abs());
 
         pools[PoolType(poolType)][poolTier].value = uint256(poolValue);
 
@@ -188,15 +186,13 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
   /// @param oracleRoundIdsToExecute The oracle prices that will be the prices for each epoch
   function updateSystemStateUsingValidatedOracleRoundIds(uint80[] memory oracleRoundIdsToExecute) external checkMarketNotDeprecated {
     uint32 latestExecutedEpochIndex = epochInfo.latestExecutedEpochIndex;
-    (int256 previousPrice, int256[] memory epochPrices) = oracleManager.validateAndReturnMissedEpochInformation(
-      latestExecutedEpochIndex,
-      epochInfo.latestExecutedOracleRoundId,
-      oracleRoundIdsToExecute
-    );
+    int256[] memory epochPrices = oracleManager.validateAndReturnMissedEpochInformation(latestExecutedEpochIndex, oracleRoundIdsToExecute);
+
+    int256 previousPrice = int256(uint256(epochInfo.lastEpochPrice));
 
     uint256 numberOfEpochsToExecute = epochPrices.length;
 
-    uint128[2] memory totalEffectiveLiquidityPoolType = effectiveLiquidityForPoolType;
+    uint256[2] memory totalEffectiveLiquidityPoolType = effectiveLiquidityForPoolType;
 
     for (uint256 i = 0; i < numberOfEpochsToExecute; ) {
       /* i is incremented later in scope*/
@@ -209,6 +205,7 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
       );
 
       previousPrice = epochPrices[i];
+      require(previousPrice < type(int128).max, "invalid epoch price");
 
       PoolState[] memory poolStates;
       (totalEffectiveLiquidityPoolType, poolStates) = _rebalancePoolsAndExecuteBatchedActions(
@@ -228,6 +225,7 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
     effectiveLiquidityForPoolType = totalEffectiveLiquidityPoolType;
     epochInfo = EpochInfo({
       latestExecutedEpochIndex: latestExecutedEpochIndex + uint32(numberOfEpochsToExecute),
+      lastEpochPrice: uint128(int128(previousPrice)),
       latestExecutedOracleRoundId: oracleRoundIdsToExecute[oracleRoundIdsToExecute.length - 1]
     });
   }
@@ -245,7 +243,7 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
 
   /// @notice Allows users to mint pool token assets for a market. To prevent front-running these mints are executed on the next price update from the oracle.
   /// @dev Called by external functions to mint either long or short. If a user mints multiple times before a price update, these are treated as a single mint.
-  /// @dev We have to check market not deprecated after system state update because that is the function that determines whether the market should be deprecated.
+  /// @dev We have to check minting is not paused.
   /// @param amount Amount of payment tokens in that token's lowest denominationfor which to mint pool token assets at next price.
   /// @param poolType an enum representing the type of poolTier for eg. LONG or SHORT.
   /// @param poolTier leveraged poolTier index
@@ -356,7 +354,7 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
 
   /// @notice Allows users to mint pool token assets for a market. To prevent front-running these mints are executed on the next price update from the oracle.
   /// @dev Called by external functions to mint either long or short. If a user mints multiple times before a price update, these are treated as a single mint.
-  /// @dev We have to check market not deprecated after system state update because that is the function that determines whether the market should be deprecated.
+  /// @dev We have to check market is not deprecated.
   /// @param amount Amount of payment tokens in that token's lowest denominationfor which to mint pool token assets at next price.
   /// @param poolType an enum representing the type of poolTier for eg. LONG or SHORT.
   /// @param poolTier leveraged poolTier index
@@ -574,9 +572,9 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
 
     // Only if mints or redeems exist is it necessary to adjust supply and collateral.
     if (batch.paymentToken_deposit > 0 || batch.poolToken_redeem > 0) {
-      changeInMarketValue_inPaymentToken = int128(batch.paymentToken_deposit) - int256(uint256(batch.poolToken_redeem).mul(price));
+      changeInMarketValue_inPaymentToken = int256(batch.paymentToken_deposit) - int256(uint256(batch.poolToken_redeem).mul(price));
 
-      int256 changeInSupply_poolToken = int256(uint256(batch.paymentToken_deposit).div(price)) - int128(batch.poolToken_redeem);
+      int256 changeInSupply_poolToken = int256(uint256(batch.paymentToken_deposit).div(price)) - int256(batch.poolToken_redeem);
 
       pool.batchedAmount[associatedEpochIndex & 1] = BatchedActions(0, 0);
 
@@ -599,10 +597,10 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
   */
 
   /// @notice Place the market in a state where no more price updates or mints are allowed
-  function _deprecateMarket() internal {
+  function _deprecateMarket() internal checkMarketNotDeprecated {
     ValueChangeAndFunding memory emptyValueChangeAndFunding;
 
-    uint128[2] memory newEffectiveLiquidity = effectiveLiquidityForPoolType;
+    uint256[2] memory newEffectiveLiquidity = effectiveLiquidityForPoolType;
 
     // Here we rebalance the market twice with zero price change (so the pool tokens don't change price) but all outstanding
     for (uint32 i = 1; i <= 2; i++)
@@ -629,7 +627,7 @@ contract MarketCore is AccessControlledAndUpgradeableModifiers, IMarketCommon, I
   }
 
   /// @notice Place the market in a state where no more price updates or mints are allowed
-  function deprecateMarket() external adminOnly {
+  function deprecateMarket() external emergencyMitigationOnly {
     _deprecateMarket();
   }
 

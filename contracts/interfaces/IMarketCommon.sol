@@ -13,8 +13,9 @@ interface IMarketCommon {
   struct EpochInfo {
     uint32 latestExecutedEpochIndex;
     // Reference to Chainlink Index
-    // NOTE: a future version of the protocol could rather require keeper to pass this in each epoch,it is unknown if verifying it each time with the orocle manager would be cheaper.
     uint80 latestExecutedOracleRoundId;
+    // This should be large enough for all price data.
+    uint144 lastEpochPrice;
   }
 
   /// @notice Each market has 3 different types of pools
@@ -27,8 +28,8 @@ interface IMarketCommon {
 
   /// @notice Collection of all user actions (deposit is for mints)
   struct BatchedActions {
-    uint128 paymentToken_deposit;
-    uint128 poolToken_redeem;
+    uint256 paymentToken_deposit;
+    uint256 poolToken_redeem;
   }
 
   /// @notice Static values that each pool needs to have

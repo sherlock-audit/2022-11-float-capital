@@ -179,7 +179,13 @@ contract MarketFundingRateSenarioOne is FloatTest {
 
   function checkMarketPoolsAtCheckpointD() public {
     // check pools
-    int256[2] memory fundingAmounts = calculateFundingAmount(uint8(IMarketCommon.PoolType.LONG), 58e18, 50e18, IMarket(address(market)));
+    int256[2] memory fundingAmounts = calculateFundingAmount(
+      uint8(IMarketCommon.PoolType.LONG),
+      58e18,
+      50e18,
+      IMarket(address(market)),
+      market.get_pool_leverage(IMarketCommon.PoolType.FLOAT, 1)
+    );
     {
       address shortPoolToken = market.get_pool_token(IMarketCommon.PoolType.SHORT, POOL_INDEX);
       int96 shortPoolLeverage = market.get_pool_leverage(IMarketCommon.PoolType.SHORT, POOL_INDEX);
@@ -247,12 +253,19 @@ contract MarketFundingRateSenarioOne is FloatTest {
   }
 
   function checkMarketPoolsAtCheckpointE() public {
-    int256[2] memory previousFundingAmounts = calculateFundingAmount(uint8(IMarketCommon.PoolType.LONG), 58e18, 50e18, IMarket(address(market)));
+    int256[2] memory previousFundingAmounts = calculateFundingAmount(
+      uint8(IMarketCommon.PoolType.LONG),
+      58e18,
+      50e18,
+      IMarket(address(market)),
+      market.get_pool_leverage(IMarketCommon.PoolType.FLOAT, 1)
+    );
     int256[2] memory fundingAmounts = calculateFundingAmount(
       uint8(IMarketCommon.PoolType.LONG),
       58e18 - uint256(previousFundingAmounts[uint8(IMarketCommon.PoolType.LONG)]),
       50e18 - uint256(-previousFundingAmounts[uint8(IMarketCommon.PoolType.SHORT)]),
-      IMarket(address(market))
+      IMarket(address(market)),
+      market.get_pool_leverage(IMarketCommon.PoolType.FLOAT, 1)
     );
     {
       address shortPoolToken = market.get_pool_token(IMarketCommon.PoolType.SHORT, POOL_INDEX);
@@ -430,11 +443,8 @@ contract MarketFundingRateSenarioOne is FloatTest {
 
     // Should this equal 0 or 1?
     assertEq(epochInfo.latestExecutedEpochIndex, 0, "Checkpoint A latest Executed Epoch Index not correct");
-    assertEq(
-      epochInfo.latestExecutedOracleRoundId,
-      chainlinkOracleMock.currentRoundId(),
-      "Checkpoint A previous execution price oracle identifier incorrect"
-    );
+    (, int256 answer, , , ) = chainlinkOracleMock.getRoundData(chainlinkOracleMock.currentRoundId());
+    assertEq(int256(uint256(epochInfo.lastEpochPrice)), answer, "Checkpoint A previous execution price incorrect");
 
     checkMarketPoolsAtCheckpointA();
 
@@ -499,7 +509,12 @@ contract MarketFundingRateSenarioOne is FloatTest {
 
     vm.startPrank(ADMIN);
     market.changeMarketFundingRateMultiplier(
-      IMarketExtendedCore.FundingRateUpdate({prevMultiplier: market.get_fundingRateMultiplier(), newMultiplier: 10000})
+      IMarketExtendedCore.FundingRateUpdate({
+        prevMultiplier: market.get_fundingRateMultiplier(),
+        newMultiplier: 10000,
+        prevMinFloatPoolFundingBoost: market.get_minFloatPoolFundingBoost(),
+        newMinFloatPoolFundingBoost: 1e18
+      })
     );
 
     vm.stopPrank();

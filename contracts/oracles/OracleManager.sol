@@ -26,6 +26,16 @@ contract OracleManager is IOracleManager {
   /// @dev No mechanism exists currently to upgrade this value. Additional contract work+testing needed to make this have flexibility.
   uint256 public immutable EPOCH_LENGTH;
 
+  /// @notice Phase ID to last round ID of the associated aggregator
+  mapping(uint16 => uint80) public lastRoundId;
+
+  /*╔═════════════════════════════╗
+    ║           ERRORS            ║
+    ╚═════════════════════════════╝*/
+
+  /// @notice Thrown when no phase ID is in the mapping
+  error NoPhaseIdSet(uint16 phaseId);
+
   /*╔═════════════════════════════╗
     ║        Construction         ║
     ╚═════════════════════════════╝*/
@@ -43,6 +53,24 @@ contract OracleManager is IOracleManager {
     //         and this is set at the time of deployment of this contract
     //         i.e. calling getCurrentEpochIndex() at the end of this constructor will give a value of 1.
     initialEpochStartTimestamp = getEpochStartTimestamp() - epochLength;
+  }
+
+  /*╔═════════════════════════════╗
+    ║          LastRoundId        ║
+    ╚═════════════════════════════╝*/
+
+  function setLastRoundId(uint16 _phaseId, uint64 _lastRoundId) external {
+    (uint80 latestId, , , , ) = chainlinkOracle.latestRoundData();
+    require(latestId >> 64 > _phaseId, "incorrect phase change passed");
+    (, , uint256 nextTimestampOnCurrentPhase, , ) = chainlinkOracle.getRoundData((uint80(_phaseId) << 64) | uint80(_lastRoundId + 1));
+    require(nextTimestampOnCurrentPhase == 0, "incorrect phase change passed");
+
+    lastRoundId[_phaseId] = uint80((uint256(_phaseId) << 64) | _lastRoundId);
+
+    (, , uint256 lastUpdateOnPhaseTimestamp, , ) = chainlinkOracle.getRoundData(lastRoundId[_phaseId]);
+
+    // NOTE: this protects against chainlink phases with no price updates
+    require(lastUpdateOnPhaseTimestamp > 0 || _lastRoundId == 0, "incorrect phase change passed");
   }
 
   /*╔═════════════════════════════╗
@@ -72,20 +100,18 @@ contract OracleManager is IOracleManager {
 
   /// @notice Check that the given array of oracle prices are valid for the epochs that need executing
   /// @param latestExecutedEpochIndex The index of the epoch that was last executed
-  /// @param latestExecutedOracleRoundId The roundId of the oracle price associated with the latest executed epoch
   /// @param oracleRoundIdsToExecute Array of roundIds to be validated
-  /// @return previousPrice Oracle price associated with the latest executed epoch
   /// @return missedEpochPriceUpdates Array of prices to be used for epoch execution
-  function validateAndReturnMissedEpochInformation(
-    uint32 latestExecutedEpochIndex,
-    uint80 latestExecutedOracleRoundId,
-    uint80[] memory oracleRoundIdsToExecute
-  ) public view returns (int256 previousPrice, int256[] memory missedEpochPriceUpdates) {
+  function validateAndReturnMissedEpochInformation(uint32 latestExecutedEpochIndex, uint80[] memory oracleRoundIdsToExecute)
+    public
+    view
+    returns (int256[] memory missedEpochPriceUpdates)
+  {
     uint256 lengthOfEpochsToExecute = oracleRoundIdsToExecute.length;
 
     if (lengthOfEpochsToExecute == 0) revert EmptyArrayOfIndexes();
 
-    (, previousPrice, , , ) = chainlinkOracle.getRoundData(latestExecutedOracleRoundId);
+    // (, previousPrice, , , ) = chainlinkOracle.getRoundData(latestExecutedOracleRoundId);
 
     missedEpochPriceUpdates = new int256[](lengthOfEpochsToExecute);
 
@@ -105,17 +131,22 @@ contract OracleManager is IOracleManager {
       // Get Previous round data to validate correctness.
       (, , uint256 previousOracleUpdateTimestamp, , ) = chainlinkOracle.getRoundData(oracleRoundIdsToExecute[i] - 1);
 
-      // Check if there was a 'phase change' AND the `_currentOraclePrice` is zero.
-      if ((oracleRoundIdsToExecute[i] >> 64) > (latestExecutedOracleRoundId >> 64) && previousOracleUpdateTimestamp == 0) {
+      // Check if the previous oracle timestamp was zero, but the current one wasn't - then check if there was a phase change.
+      if (previousOracleUpdateTimestamp == 0 && (oracleRoundIdsToExecute[i] >> 64 != (oracleRoundIdsToExecute[i] - 1) >> 64)) {
+        uint16 numberOfPhaseChanges = 1;
+
         // NOTE: if the phase changes, then we want to correct the phase of the update.
         //       There is no guarantee that the phaseID won't increase multiple times in a short period of time (hence the while loop).
         //       But chainlink does promise that it will be sequential.
         // View how phase changes happen here: https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.7/dev/AggregatorProxy.sol#L335
         while (previousOracleUpdateTimestamp == 0) {
-          // NOTE: re-using this variable to keep gas costs low for this edge case.
-          latestExecutedOracleRoundId = (((latestExecutedOracleRoundId >> 64) + 1) << 64) | uint64(oracleRoundIdsToExecute[i] - 1);
-
-          (, , previousOracleUpdateTimestamp, , ) = chainlinkOracle.getRoundData(latestExecutedOracleRoundId);
+          uint16 prevPhaseId = uint16((oracleRoundIdsToExecute[i] >> 64) - numberOfPhaseChanges++);
+          if (lastRoundId[prevPhaseId] != 0) {
+            // NOTE: re-using this variable to keep gas costs low for this edge case.
+            (, , previousOracleUpdateTimestamp, , ) = chainlinkOracle.getRoundData(lastRoundId[prevPhaseId]);
+          } else {
+            revert NoPhaseIdSet({phaseId: prevPhaseId});
+          }
         }
       }
 

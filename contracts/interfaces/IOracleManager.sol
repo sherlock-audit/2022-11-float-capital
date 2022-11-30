@@ -45,13 +45,10 @@ interface IOracleManager {
 
   /// @notice Check that the given array of oracle prices are valid for the epochs that need executing
   /// @param _latestExecutedEpochIndex The index of the epoch that was last executed
-  /// @param latestExecutedOracleRoundId The roundId of the oracle price associated with the latest executed epoch
   /// @param oracleRoundIdsToExecute Array of roundIds to be validated
-  /// @return previousPrice Oracle price associated with the latest executed epoch
   /// @return prices Array of prices to be used for epoch execution
-  function validateAndReturnMissedEpochInformation(
-    uint32 _latestExecutedEpochIndex,
-    uint80 latestExecutedOracleRoundId,
-    uint80[] memory oracleRoundIdsToExecute
-  ) external view returns (int256 previousPrice, int256[] memory prices);
+  function validateAndReturnMissedEpochInformation(uint32 _latestExecutedEpochIndex, uint80[] memory oracleRoundIdsToExecute)
+    external
+    view
+    returns (int256[] memory prices);
 }
