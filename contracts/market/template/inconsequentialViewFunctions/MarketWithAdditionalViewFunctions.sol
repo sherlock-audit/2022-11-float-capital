@@ -8,7 +8,7 @@ import "../MarketExtended.sol";
 /// @title Non-core market contract
 /// @notice Functions in this contract are either view functions or admin-callable functions
 contract MarketExtended is MarketExtendedCore, IMarketExtended {
-  constructor(address _paymentToken, IRegistry _registry) MarketExtendedCore(_paymentToken, _registry) {}
+  constructor(address _paymentToken, IRegistry _registry) MarketExtendedCore(_paymentToken, _registry, 1e18) {}
 
   /// @notice Purely a convenience function to get the seeder address. Used in testing.
   function getSeederAddress() external pure returns (address) {
@@ -84,8 +84,13 @@ contract MarketExtended is MarketExtendedCore, IMarketExtended {
   }
 
   /// @notice Admin-adjustable value that determines the magnitude of funding amount each epoch
-  function get_fundingRateMultiplier() external view returns (uint256) {
-    return fundingRateMultiplier;
+  function get_fundingRateMultiplier() external view returns (uint128) {
+    return fundingVariables.fundingRateMultiplier;
+  }
+
+  /// @notice Admin-adjustable value that determines the minimum magnitude of funding amount each epoch
+  function get_minFloatPoolFundingBoost() external view returns (uint128) {
+    return fundingVariables.minFloatPoolFundingBoost;
   }
 
   /// @notice Admin-adjustable value that determines the mint fee
@@ -94,7 +99,7 @@ contract MarketExtended is MarketExtendedCore, IMarketExtended {
   }
 
   /// @notice The effective liquidity (actual liquidity * leverage) for all the pools of a specific type
-  function get_effectiveLiquidityForPoolType() external view returns (uint128[2] memory) {
+  function get_effectiveLiquidityForPoolType() external view returns (uint256[2] memory) {
     return effectiveLiquidityForPoolType;
   }
 
@@ -120,7 +125,7 @@ contract Market is MarketCore, IMarketTieredLeverage {
     IRegistry registry
   ) MarketCore(_nonCoreFunctionsDelegatee, _paymentToken, registry) {}
 
-  function get_FLOAT_POOL_ROLE() external view override returns (bytes32) {
+  function get_FLOAT_POOL_ROLE() external pure override returns (bytes32) {
     return FLOAT_POOL_ROLE;
   }
 

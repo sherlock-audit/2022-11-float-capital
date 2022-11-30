@@ -108,10 +108,11 @@ contract MarketTieredLeveragePauseAndDeprecationTest is FloatTest {
     dealPaymentTokenWithMarketApproval(marketIndex, user);
 
     vm.startPrank(user);
-    bytes32 adminRole = market.ADMIN_ROLE();
+    bytes32 emergancyAdminRole = market.EMERGENCY_ROLE();
+
     string memory message = string.concat(
       "AccessControl: account ",
-      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(adminRole))))
+      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(emergancyAdminRole))))
     );
     vm.expectRevert(bytes(message));
     marketExtended.pauseMinting();
@@ -126,10 +127,10 @@ contract MarketTieredLeveragePauseAndDeprecationTest is FloatTest {
     marketExtended.pauseMinting();
 
     changePrank(user);
-    bytes32 adminRole = market.ADMIN_ROLE();
+    bytes32 emergancyAdminRole = market.EMERGENCY_ROLE();
     string memory message = string.concat(
       "AccessControl: account ",
-      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(adminRole))))
+      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(emergancyAdminRole))))
     );
     vm.expectRevert(bytes(message));
     marketExtended.unpauseMinting();
@@ -208,10 +209,10 @@ contract MarketTieredLeveragePauseAndDeprecationTest is FloatTest {
     dealPaymentTokenWithMarketApproval(marketIndex, user);
 
     vm.startPrank(user);
-    bytes32 adminRole = defaultMarket.ADMIN_ROLE();
+    bytes32 emergancyAdminRole = defaultMarket.EMERGENCY_ROLE();
     string memory message = string.concat(
       "AccessControl: account ",
-      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(adminRole))))
+      string.concat(Strings.toHexString(user), string.concat(" is missing role ", Strings.toHexString(uint256(emergancyAdminRole))))
     );
     vm.expectRevert(bytes(message));
     market.deprecateMarket();

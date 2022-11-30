@@ -23,7 +23,7 @@ contract UserActionsManyEpochsTestBase is FloatTest {
   uint256 workingVariable_currEpoch;
 
   struct State {
-    uint128[2] totalEffectiveLiquidity;
+    uint256[2] totalEffectiveLiquidity;
     uint256 floatPoolLiquidity;
     int256 oraclePrice;
   }
@@ -89,9 +89,7 @@ contract UserActionsManyEpochsTestBase is FloatTest {
     updateBalances(user, poolType, poolIndex);
     prevState.totalEffectiveLiquidity = defaultMarket.get_effectiveLiquidityForPoolType();
     prevState.floatPoolLiquidity = defaultMarket.get_pool_value(IMarketCommon.PoolType.FLOAT, 0);
-    prevState.oraclePrice = AggregatorV3InterfaceS(address(defaultOracleManager.chainlinkOracle()))
-      .getRoundData((getPreviousOraclePriceIdentifier()))
-      .answer;
+    prevState.oraclePrice = getLastEpochPrice();
     workingVariable_prevEpoch = 0;
     workingVariable_currEpoch = 0;
     uint112 randAmount;
@@ -215,9 +213,7 @@ contract UserActionsManyEpochsTestBase is FloatTest {
 
       updateBalances(user, poolType, poolIndex);
 
-      prevState.oraclePrice = AggregatorV3InterfaceS(address(defaultOracleManager.chainlinkOracle()))
-        .getRoundData((getPreviousOraclePriceIdentifier()))
-        .answer;
+      prevState.oraclePrice = getLastEpochPrice();
       prevState.totalEffectiveLiquidity = defaultMarket.get_effectiveLiquidityForPoolType();
       prevState.floatPoolLiquidity = defaultMarket.get_pool_value(IMarketCommon.PoolType.FLOAT, 0);
     }
@@ -264,9 +260,7 @@ contract UserActionsManyEpochsTestBase is FloatTest {
         uint112(PoolToken(MarketExtended(address(defaultMarket)).getPoolTokenAddress(poolType, poolIndex)).balanceOf(user) / maxActions - 1e18));
 
     updateBalances(user, poolType, poolIndex);
-    prevState.oraclePrice = AggregatorV3InterfaceS(address(defaultOracleManager.chainlinkOracle()))
-      .getRoundData((getPreviousOraclePriceIdentifier()))
-      .answer;
+    prevState.oraclePrice = getLastEpochPrice();
     prevState.totalEffectiveLiquidity = defaultMarket.get_effectiveLiquidityForPoolType();
     prevState.floatPoolLiquidity = defaultMarket.get_pool_value(IMarketCommon.PoolType.FLOAT, 0);
     workingVariable_prevEpoch = 0;
@@ -372,9 +366,7 @@ contract UserActionsManyEpochsTestBase is FloatTest {
 
       updateBalances(user, poolType, poolIndex);
 
-      prevState.oraclePrice = AggregatorV3InterfaceS(address(defaultOracleManager.chainlinkOracle()))
-        .getRoundData((getPreviousOraclePriceIdentifier()))
-        .answer;
+      prevState.oraclePrice = getLastEpochPrice();
       prevState.totalEffectiveLiquidity = defaultMarket.get_effectiveLiquidityForPoolType();
       prevState.floatPoolLiquidity = defaultMarket.get_pool_value(IMarketCommon.PoolType.FLOAT, 0);
     }

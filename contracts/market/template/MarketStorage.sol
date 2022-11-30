@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 import "../../abstract/AccessControlledAndUpgradeable.sol";
@@ -48,8 +49,14 @@ contract MarketStorage is IMarketCommon {
 
   uint256[45] private __marketStateGap;
 
-  /// @notice Adjustable variable that determines the rate at which traders pay fees to the market makers
-  uint256 internal fundingRateMultiplier = 0;
+  struct FundingVariables {
+    /// @notice This value is used to keep a minimim amount of funding even when the market is close to balanced.
+    uint128 minFloatPoolFundingBoost;
+    /// @notice Adjustable variable that determines the rate at which traders pay fees to the market makers
+    uint128 fundingRateMultiplier;
+  }
+
+  FundingVariables fundingVariables;
 
   /// @notice Adjustable value that determines the mint fee
   uint256 internal stabilityFee_basisPoints = 0;
@@ -67,7 +74,7 @@ contract MarketStorage is IMarketCommon {
   uint256[2] public feesToDistribute;
 
   /// @notice Effective liquidity for short (0) and long (1) pool types
-  uint128[2] effectiveLiquidityForPoolType;
+  uint256[2] effectiveLiquidityForPoolType;
 
   uint256[45] private __globalStorageGap;
 
@@ -103,7 +110,7 @@ contract MarketStorage is IMarketCommon {
   address internal immutable paymentToken;
 
   constructor(address _paymentToken, IRegistry _registry) {
-    if (_paymentToken == address(0)) revert InvalidAddress({invalidAddress: _paymentToken});
+    require(IERC20Metadata(_paymentToken).decimals() == 18, "wrong decimals");
     if (address(_registry) == address(0)) revert InvalidAddress({invalidAddress: address(_registry)});
 
     paymentToken = _paymentToken;
